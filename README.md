@@ -355,4 +355,121 @@ print("This is my second new feature!")
 EOF
 ```
 
+Stage and commit the changes as usual:
 
+```shell
+$ git add . && git commit -m "Fixed the bug"
+[hotfix/GM-789 ae3cddc] Fixed the bug
+ 2 files changed, 105 insertions(+), 2 deletions(-)
+```
+
+> **NOTE:** This command is a little different. Here we're telling git to add everything to the stage by using the `.` and we're using command concatenation (a shell feature) to also immediately commit.
+
+Now we push our changes:
+
+```shell
+$ git push origin hotfix/GM-789
+Enumerating objects: 7, done.
+Counting objects: 100% (7/7), done.
+Delta compression using up to 10 threads
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (4/4), 2.07 KiB | 2.07 MiB/s, done.
+Total 4 (delta 1), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+remote:
+remote: Create a pull request for 'hotfix/GM-789' on GitHub by visiting:
+remote:      https://github.com/gregmajor/trunk-based-development/pull/new/hotfix/GM-789
+remote:
+To github.com:gregmajor/trunk-based-development.git
+ * [new branch]      hotfix/GM-789 -> hotfix/GM-789
+```
+
+At this point we'd create a Pull Request to `main` as usual. Once it's merged, we'll cherry-pick the commit into our release branch. Just as always, we'll switch to the `main` branch:
+
+```shell
+$ git checkout main
+Switched to branch 'main'
+Your branch is up to date with 'origin/main'.
+```
+
+Then rebase:
+
+```shell
+$ git pull --rebase origin main
+remote: Enumerating objects: 1, done.
+remote: Counting objects: 100% (1/1), done.
+remote: Total 1 (delta 0), reused 0 (delta 0), pack-reused 0
+Unpacking objects: 100% (1/1), 626 bytes | 626.00 KiB/s, done.
+From github.com:gregmajor/trunk-based-development
+ * branch            main       -> FETCH_HEAD
+   702220c..69e51ac  main       -> origin/main
+Updating 702220c..69e51ac
+Fast-forward
+ README.md | 103 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tbd.py    |   4 ++--
+ 2 files changed, 105 insertions(+), 2 deletions(-)
+```
+
+Now check out the release branch:
+
+```shell
+$ git checkout release/1.0
+Switched to branch 'release/1.0'
+```
+
+Cherry pick the commit into the release branch:
+
+```shell
+$ git cherry-pick -m 1 -x 69e51ac545e1ac8774e0d281a45442ca394168b8
+[release/1.0 4eec041] Merge pull request #3 from gregmajor/hotfix/GM-789
+ Author: Greg Major <1848147+gregmajor@users.noreply.github.com>
+ Date: Tue Jun 6 10:10:00 2023 -0500
+ 2 files changed, 105 insertions(+), 2 deletions(-)
+```
+
+> **NOTE:** The SHA of the commit can be found using `git log`.
+
+Finally, push the changes to the remote:
+
+```shell
+$ git push origin release/1.0
+Enumerating objects: 7, done.
+Counting objects: 100% (7/7), done.
+Delta compression using up to 10 threads
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (4/4), 2.18 KiB | 2.18 MiB/s, done.
+Total 4 (delta 1), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (1/1), completed with 1 local object.
+To github.com:gregmajor/trunk-based-development.git
+   702220c..4eec041  release/1.0 -> release/1.0
+```
+
+## Tagging Releases
+Generally speaking, it's a good idea to tag your releases. This provides an easy way to know precisely which commit in Git history represents a particular version. Here's how:
+
+Check out the branch you want to tag (usually a release branch):
+
+```shell
+$ git checkout release/1.0
+Switched to branch 'release/1.0'
+```
+
+Create the tag:
+
+```shell
+$ git tag -a -m "Release v1.0.1" 1.0.1
+```
+
+Finally, push the tag to the remote:
+
+```shell
+$ git push origin --tags
+Enumerating objects: 1, done.
+Counting objects: 100% (1/1), done.
+Writing objects: 100% (1/1), 165 bytes | 165.00 KiB/s, done.
+Total 1 (delta 0), reused 0 (delta 0), pack-reused 0
+To github.com:gregmajor/trunk-based-development.git
+ * [new tag]         1.0.1 -> 1.0.1
+```
+
+> **NOTE:** Lots of CI/CD pipelines will trigger based on new tags. On the other hand, it's not uncommon for the pipeline to create the tag automatically based on new commits.
