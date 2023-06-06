@@ -253,3 +253,106 @@ Normal merge conflict for 'tbd.py':
 
 > **NOTE:** The built-in diff and merge capabilities for Git *will* work, but it's highly recommended that you install a three-way merge tool and configure Git to use it.
 
+With our conflict resolved, we need to stage the changes:
+
+```shell
+$ git add tbd.py
+```
+
+Now we can continue with the rebase:
+
+```shell
+$ git rebase --continue
+[detached HEAD 8c42f00] Adding another awesome feature
+ 2 files changed, 84 insertions(+), 1 deletion(-)
+Successfully rebased and updated refs/heads/feature/GM-456.
+```
+
+Finally, we can push our updates to the remote:
+
+```shell
+$ git push origin feature/GM-456 -f
+Enumerating objects: 15, done.
+Counting objects: 100% (15/15), done.
+Delta compression using up to 10 threads
+Compressing objects: 100% (11/11), done.
+Writing objects: 100% (11/11), 4.52 KiB | 4.52 MiB/s, done.
+Total 11 (delta 3), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (3/3), completed with 1 local object.
+To github.com:gregmajor/trunk-based-development.git
+ + 46d33ee...8c42f00 feature/GM-456 -> feature/GM-456 (forced update)
+```
+
+Since we have added new commits to our branch’s Git history, we need to pass in the `-f` (force) flag. This will allow git to overwrite the history of the remote branch. If we don’t do this Git will error out when it sees that the local and remote `feature/GM-456` branch histories differ.
+
+Please take care when using the `-f` or `--force` flag. There are very few instances where this is recommended. If you're working with other developers on the same branch then you *absolutely* need to communicate with them *before* you overwrite Git history since there will be implications for them the next time they fetch.
+
+What does this mean exactly? Here's what the Git documentation says:
+
+> Imagine that you have to rebase what you have already published. You will have to bypass the "must fast-forward" rule in order to replace the history you originally published with the rebased history. If somebody else built on top of your original history while you are rebasing, the tip of the branch at the remote may advance with their commit, and blindly pushing with `--force` will lose their work.
+
+ This is why you need to let others know before you force push so that they can make sure their changes are preserved. Better still, consider using `--force-with-lease` which is [explained here](https://git-scm.com/docs/git-push#Documentation/git-push.txt---force-with-leaseltrefnamegt).
+
+## Creating a Release
+Now we're ready to release! Some teams elect to simply create a tag (e.g., `git tag -a -m "v1.0.0"`) and let their CI/CD tools do the rest. Most teams, however, will create a release branch so that's what we'll do.
+
+```shell
+$ git checkout main
+Switched to branch 'main'
+Your branch is ahead of 'origin/main' by 2 commits.
+  (use "git push" to publish your local commits)
+```
+
+```shell
+$ git pull --rebase origin main
+remote: Enumerating objects: 1, done.
+remote: Counting objects: 100% (1/1), done.
+remote: Total 1 (delta 0), reused 0 (delta 0), pack-reused 0
+Unpacking objects: 100% (1/1), 629 bytes | 629.00 KiB/s, done.
+From github.com:gregmajor/trunk-based-development
+ * branch            main       -> FETCH_HEAD
+   ff6386e..702220c  main       -> origin/main
+Updating a1f44ed..702220c
+Fast-forward
+ README.md | 84 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ tbd.py    |  1 +
+ 2 files changed, 84 insertions(+), 1 deletion(-)
+```
+
+```shell
+$ git checkout -b release/1.0
+Switched to a new branch 'release/1.0'
+```
+
+```shell
+$ git push origin release/1.0
+Total 0 (delta 0), reused 0 (delta 0), pack-reused 0
+remote:
+remote: Create a pull request for 'release/1.0' on GitHub by visiting:
+remote:      https://github.com/gregmajor/trunk-based-development/pull/new/release/1.0
+remote:
+To github.com:gregmajor/trunk-based-development.git
+ * [new branch]      release/1.0 -> release/1.0
+```
+
+Hopefully your CI/CD pipeline is configured to detect the convention and do whatever is necessary to release into production. Regardless of the process you follow, the code that is deployed to your production environment will come from this branch.
+
+## Hot Fixes
+Yep, it happens to all of us. There's a bug in the production code and it's our job to fix it. Here's how to get it done with Trunk Based Development. First, let's create a branch to make our changes:
+
+```shell
+$ git checkout -b hotfix/GM-789
+Switched to a new branch 'hotfix/GM-789'
+```
+
+Now let's fix the bug:
+
+```shell
+cat << EOF > tbd.py
+print("This is my new feature!")
+print("Whew! No conflict here!")
+print("This is my second new feature!")
+EOF
+```
+
+
