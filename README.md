@@ -1,7 +1,11 @@
 # trunk-based-development
 A demo of Trunk Based Development (TBD).
 
-> **NOTE:** This example assumes you're using GitHub. If you're using GitLab or some other Git-based host then you'll need to make the necessary adjustments to the commands provided.
+> **NOTES:**
+* This example assumes you're using GitHub. If you're using GitLab or some other Git-based host then you'll need to make the necessary adjustments to the commands provided.
+* The provided commands also include an example of the output. This is to give you some idea of what *should* happen when you issue the command. Be aware, however, that your output might not match exactly.
+* Some of the examples use Python. You don't need to have Python installed to follow along, however. You can replace the examples written in Python with whatever you'd like.
+* The command examples include a typical bash shell prompt (`$`). Do not include this if you intend to copy/paste to follow along.
 
 ## Clone the Repository
 The first thing we need to do is clone the repository.
@@ -61,9 +65,16 @@ Switched to a new branch 'feature/GM-123'
 At this point you can make whatever changes you'd like. Let's create a simple Python script to satisfy our new feature:
 
 ```shell
-cat << EOF > tbd.py
+$ cat << EOF > tbd.py
 print("This is my new feature!")
 EOF
+```
+
+Let's test our feature to make sure it works like we expect:
+
+```shell
+$ python tbd.py
+This is my new feature!
 ```
 
 Now let's stage our new file:
@@ -99,3 +110,64 @@ To github.com:gregmajor/trunk-based-development.git
  * [new branch]      feature/GM-123 -> feature/GM-123
 ```
 
+Usually we'd run unit tests locally before we staged our changes and *certainly* before we push our code. For this example, we'll assume that running the script and seeing the expected output is sufficient.
+
+Finally, we want our changes to be merged to the trunk. To signal our intent we'll create a Pull Request. Since Pull Requests are not a feature of Git, you'll need to create a new Pull Request in GitHub either on the website or via the GitHub CLI.
+
+At this point several things will happen in a mature organization including:
+
+* The build pipeline will build the code and execute the unit tests. If the build fails or the unit tests don't pass then the Pull Request will *not* be created and the submitter will be notified.
+* Code quality tools (e.g., linters, GitGuardian, Codacy, etc.) will run checks. If the checks do not pass then the Pull Request will not be created and the submitter will be notified.
+* One or more team members will manually review the code. If they see something they want changed or have questions then they can make comments on the Pull Request and ideally communicate directly with the submitter.
+* Once the PR is merged, the trunk will be built and deployed to the appropriate environments.
+
+## Creating Another Feature
+We're moving right along! Let's create a new feature. The first thing we need to do is make sure that our local trunk branch is up to date with the remote trunk branch (`main` in our example). To do that, we first need to make sure we've checked out the trunk:
+
+```shell
+$ git checkout main
+M	.gitignore
+M	README.md
+Switched to branch 'main'
+Your branch is up to date with 'origin/main'.
+```
+
+Notice that the file we created (`tbd.py`) isn't there. That's because we need to update our local copy of the trunk branch. To do that we'll run this command:
+
+```shell
+$ git pull --rebase origin main
+remote: Enumerating objects: 1, done.
+remote: Counting objects: 100% (1/1), done.
+remote: Total 1 (delta 0), reused 0 (delta 0), pack-reused 0
+Unpacking objects: 100% (1/1), 640 bytes | 640.00 KiB/s, done.
+From github.com:gregmajor/trunk-based-development
+ * branch            main       -> FETCH_HEAD
+   326953d..3d2ec2e  main       -> origin/main
+Successfully rebased and updated refs/heads/main.
+```
+
+Now our `tbd.py` file should be present along with all the other changes that have happened. Let's proceed with our second feature by creating a new short-lived feature branch assuming issue `GM-456` and then editing our `tbd.py` file:
+
+```shell
+$ git checkout -b feature/GM-456
+Switched to a new branch 'feature/GM-456'
+```
+
+```shell
+$ cat << EOF > tbd.py
+print("This is my new feature!")
+print("This is my second new feature!")
+EOF
+```
+
+After we test, we can stage the change, commit, and push just like before:
+
+```shell
+$ git add tbd.py
+```
+
+```shell
+$ git commit -m "Adding another awesome feature"
+[feature/GM-456 46d33ee] Adding another awesome feature
+ 1 file changed, 1 insertion(+)
+ ```
