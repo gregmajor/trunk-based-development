@@ -171,3 +171,85 @@ $ git commit -m "Adding another awesome feature"
 [feature/GM-456 46d33ee] Adding another awesome feature
  1 file changed, 1 insertion(+)
  ```
+
+ ```shell
+ $ git push origin feature/GM-456
+Enumerating objects: 11, done.
+Counting objects: 100% (11/11), done.
+Delta compression using up to 10 threads
+Compressing objects: 100% (7/7), done.
+Writing objects: 100% (7/7), 2.08 KiB | 2.08 MiB/s, done.
+Total 7 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2), completed with 1 local object.
+remote:
+remote: Create a pull request for 'feature/GM-456' on GitHub by visiting:
+remote:      https://github.com/gregmajor/trunk-based-development/pull/new/feature/GM-456
+remote:
+To github.com:gregmajor/trunk-based-development.git
+ * [new branch]      feature/GM-456 -> feature/GM-456
+ ```
+
+Finally, just like before, we can create a Pull Request to get our new feature merged to trunk.
+
+## Rebasing
+
+> **NOTE:** For the purposes of this demo, we're going to simulate a merge conflict by editing the `tbd.py` file directly in GitHub on the trunk.
+
+Uh-oh! Looks like somebody made changes and now our code can't be automatically merged. No big deal. Let's get everything squared away.
+
+First, let's update our local trunk (`main` in our case):
+
+```shell
+$ git checkout main
+M	README.md
+Switched to branch 'main'
+Your branch is ahead of 'origin/main' by 1 commit.
+  (use "git push" to publish your local commits)
+```
+
+```shell
+$ git pull --rebase origin main
+remote: Enumerating objects: 5, done.
+remote: Counting objects: 100% (5/5), done.
+remote: Compressing objects: 100% (3/3), done.
+remote: Total 3 (delta 1), reused 0 (delta 0), pack-reused 0
+Unpacking objects: 100% (3/3), 748 bytes | 249.00 KiB/s, done.
+From github.com:gregmajor/trunk-based-development
+ * branch            main       -> FETCH_HEAD
+   3d2ec2e..ff6386e  main       -> origin/main
+Successfully rebased and updated refs/heads/main.
+```
+
+Now we can get the latest commits in trunk and incorporate them into our feature branch:
+
+```shell
+$ git checkout feature/GM-456
+Switched to branch 'feature/GM-456'
+```
+
+```shell
+$ git rebase main
+Auto-merging tbd.py
+CONFLICT (content): Merge conflict in tbd.py
+error: could not apply 46d33ee... Adding another awesome feature
+hint: Resolve all conflicts manually, mark them as resolved with
+hint: "git add/rm <conflicted_files>", then run "git rebase --continue".
+hint: You can instead skip this commit: run "git rebase --skip".
+hint: To abort and get back to the state before "git rebase", run "git rebase --abort".
+Could not apply 46d33ee... Adding another awesome feature
+```
+
+Oh no! The dreaded merge conflict! Not to worry, use your favorite method to resolve the conflict then follow the supplied instructions. For example:
+
+```shell
+$ git mergetool
+Merging:
+tbd.py
+
+Normal merge conflict for 'tbd.py':
+  {local}: modified file
+  {remote}: modified file
+```
+
+> **NOTE:** The built-in diff and merge capabilities for Git *will* work, but it's highly recommended that you install a three-way merge tool and configure Git to use it.
+
