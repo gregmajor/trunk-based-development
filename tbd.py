@@ -1,3 +1,3 @@
 print("This is my new feature!")
-print("Uh-oh! This should create a merge conflict!")
+print("Whew! No conflict here!")
 print("This is my second new feature!")
